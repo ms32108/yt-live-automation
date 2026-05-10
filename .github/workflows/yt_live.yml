@@ -2,7 +2,9 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    - cron: '30 15 * * *'
+    # 3:30 PM UTC is 9:00 PM IST. 
+    # (GitHub often delays this by 20+ minutes)
+    - cron: '45 15 * * *'
   workflow_dispatch:
 
 env:
@@ -11,6 +13,7 @@ env:
 jobs:
   stream-video:
     runs-on: ubuntu-24.04
+    timeout-minutes: 360 
 
     steps:
       - name: Checkout Repository
@@ -19,19 +22,31 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg pipx
+          sudo apt-get install -y ffmpeg
 
       - name: Download Video from Google Drive
-        # Passing the full direct URL is much safer for gdown
-        run: pipx run gdown "https://drive.google.com/uc?id=1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u" -O video.mp4
+        run: |
+          # Use --confirm-full to bypass the 500MB virus scan warning page
+          pipx run gdown --id 1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u -O video.mp4 --confirm-full
 
-      - name: Verify Download (Debugging)
-        # This tells the server to list the file size. 
-        # If it says 0 bytes or fails here, we know Drive blocked it.
-        run: ls -lh video.mp4
+      - name: Verify Video File
+        run: |
+          ls -lh video.mp4
+          FILESIZE=$(stat -c%s "video.mp4")
+          # Check if file is at least 400MB (419430400 bytes)
+          if [ $FILESIZE -lt 419430400 ]; then
+            echo "Error: Download failed. File is too small. Check GDrive permissions."
+            exit 1
+          fi
 
       - name: Stream to YouTube
         env:
           STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
-        # Translating AV1/Opus to H.264/AAC for YouTube
-        run: ffmpeg -re -i video.mp4 -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -ar 44100 -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+        run: |
+          # Optimized for 500MB file streaming to YouTube
+          ffmpeg -re -i video.mp4 \
+          -c:v libx264 -preset veryfast -b:v 3000k \
+          -maxrate 3000k -bufsize 6000k \
+          -pix_fmt yuv420p -g 60 \
+          -c:a aac -ar 44100 -b:a 128k \
+          -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
