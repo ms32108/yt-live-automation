@@ -2,7 +2,7 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    - cron: '15 16 * * *'
+    - cron: '27 16 * * *'  # 16:27 UTC = 9:57 PM IST
   workflow_dispatch:
 
 jobs:
