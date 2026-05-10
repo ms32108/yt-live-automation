@@ -5,7 +5,6 @@ on:
     - cron: '30 15 * * *'
   workflow_dispatch:
 
-# This silences the Node.js warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -23,13 +22,16 @@ jobs:
           sudo apt-get install -y ffmpeg pipx
 
       - name: Download Video from Google Drive
-        # Using 'pipx run' prevents the Exit Code 127 error
-        run: pipx run gdown --id "1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u" -O video.mp4
+        # Passing the full direct URL is much safer for gdown
+        run: pipx run gdown "https://drive.google.com/uc?id=1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u" -O video.mp4
+
+      - name: Verify Download (Debugging)
+        # This tells the server to list the file size. 
+        # If it says 0 bytes or fails here, we know Drive blocked it.
+        run: ls -lh video.mp4
 
       - name: Stream to YouTube
         env:
           STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
-        run: |
-          ffmpeg -re -i video.mp4 \
-          -c copy \
-          -f flv rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY
+        # Flattened into a single line to completely avoid Bash syntax errors
+        run: ffmpeg -re -i video.mp4 -c copy -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
