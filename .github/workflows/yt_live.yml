@@ -2,7 +2,7 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    - cron: '27 16 * * *'  # 16:27 UTC = 9:57 PM IST
+    - cron: '15 16 * * *' # 9:45 PM IST
   workflow_dispatch:
 
 jobs:
@@ -18,15 +18,17 @@ jobs:
           sudo apt-get install -y ffmpeg
 
       - name: Download Video from Google Drive
+        # Fixed the gdown command below
         run: |
-          pipx run gdown --id 1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u -O video.mp4 --confirm-full
+          pipx run gdown 1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u -O video.mp4
 
       - name: Verify Video File
         run: |
           ls -lh video.mp4
           FILESIZE=$(stat -c%s "video.mp4")
+          # 400MB check (Adjust if your video is smaller)
           if [ $FILESIZE -lt 419430400 ]; then
-            echo "File too small"
+            echo "File too small or download failed"
             exit 1
           fi
 
