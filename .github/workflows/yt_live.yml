@@ -33,5 +33,5 @@ jobs:
       - name: Stream to YouTube
         env:
           STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
-        # Flattened into a single line to completely avoid Bash syntax errors
-        run: ffmpeg -re -i video.mp4 -c copy -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+        # Translating AV1/Opus to H.264/AAC for YouTube
+        run: ffmpeg -re -i video.mp4 -c:v libx264 -preset veryfast -b:v 2500k -c:a aac -ar 44100 -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
