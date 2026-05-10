@@ -2,9 +2,8 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    # 3:30 PM UTC is 9:00 PM IST. 
-    # (GitHub often delays this by 20+ minutes)
-    - cron: '45 15 * * *'
+    # 16:00 UTC is exactly 9:30 PM IST.
+    - cron: '00 16 * * *'
   workflow_dispatch:
 
 env:
@@ -26,16 +25,15 @@ jobs:
 
       - name: Download Video from Google Drive
         run: |
-          # Use --confirm-full to bypass the 500MB virus scan warning page
+          # Use --confirm-full for the 500MB bypass
           pipx run gdown --id 1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u -O video.mp4 --confirm-full
 
       - name: Verify Video File
         run: |
           ls -lh video.mp4
           FILESIZE=$(stat -c%s "video.mp4")
-          # Check if file is at least 400MB (419430400 bytes)
           if [ $FILESIZE -lt 419430400 ]; then
-            echo "Error: Download failed. File is too small. Check GDrive permissions."
+            echo "Error: Download failed or blocked by Drive."
             exit 1
           fi
 
@@ -43,7 +41,6 @@ jobs:
         env:
           STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
         run: |
-          # Optimized for 500MB file streaming to YouTube
           ffmpeg -re -i video.mp4 \
           -c:v libx264 -preset veryfast -b:v 3000k \
           -maxrate 3000k -bufsize 6000k \
