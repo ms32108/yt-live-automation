@@ -2,9 +2,12 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    # 15:30 UTC is exactly 9:00 PM IST
     - cron: '30 15 * * *'
-  workflow_dispatch: # This allows you to test it manually with a button
+  workflow_dispatch:
+
+# This silences the Node.js warning
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   stream-video:
@@ -18,16 +21,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg pipx
-          pipx install gdown
 
       - name: Download Video from Google Drive
-        # Downloading your specific file
-        run: /home/runner/.local/bin/gdown --id "1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u" -O video.mp4
+        # Using 'pipx run' prevents the Exit Code 127 error
+        run: pipx run gdown --id "1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u" -O video.mp4
 
       - name: Stream to YouTube
         env:
           STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
-        # Streaming directly without re-encoding to save CPU
         run: |
           ffmpeg -re -i video.mp4 \
           -c copy \
