@@ -2,8 +2,8 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    - cron: '33 15 * * *' # 9:03 PM IST
-  workflow_dispatch:
+    - cron: '03 15 * * *' # Runs every day at 8:33 PM IST
+  workflow_dispatch:      # Gives you the manual 'Run workflow' button
 
 jobs:
   stream-video:
@@ -12,28 +12,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Download Video from Google Drive
-        # Fixed the gdown command below
         run: |
-          pipx run gdown 1wntPFRjpTjtRau3Sr1Ts_nSr3Qy8Lf7u -O video.mp4
-
-      - name: Verify Video File
-        run: |
-          ls -lh video.mp4
-          FILESIZE=$(stat -c%s "video.mp4")
-          # 400MB check (Adjust if your video is smaller)
-          if [ $FILESIZE -lt 419430400 ]; then
-            echo "File too small or download failed"
-            exit 1
-          fi
+          pipx run gdown 1dcJyK6LsVLJymqRa2RH2TxaCS299BfFz -O video.mp4
 
       - name: Stream to YouTube
         env:
-          STREAM_KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
+          KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
         run: |
-          ffmpeg -re -i video.mp4 -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 60 -c:a aac -ar 44100 -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$STREAM_KEY"
+          ffmpeg -re -stream_loop 1 -i video.mp4 -c copy -f flv "rtmp://a.rtmp.youtube.com/live2/$KEY"
