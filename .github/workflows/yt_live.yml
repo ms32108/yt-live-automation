@@ -3,7 +3,7 @@ name: Automated YouTube Live Stream
 on:
   schedule:
     - cron: '03 15 * * *' # Runs every day at 8:33 PM IST
-  workflow_dispatch:      # Gives you the manual 'Run workflow' button
+  workflow_dispatch:
 
 jobs:
   stream-video:
@@ -23,4 +23,4 @@ jobs:
         env:
           KEY: ${{ secrets.YOUTUBE_STREAM_KEY }}
         run: |
-          ffmpeg -re -stream_loop 1 -i video.mp4 -c copy -f flv "rtmp://a.rtmp.youtube.com/live2/$KEY"
+          ffmpeg -re -stream_loop 1 -i video.mp4 -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -pix_fmt yuv420p -g 60 -c:a aac -ar 44100 -b:a 128k -f flv "rtmp://a.rtmp.youtube.com/live2/$KEY"
