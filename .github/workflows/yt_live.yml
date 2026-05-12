@@ -2,7 +2,8 @@ name: Automated YouTube Live Stream
 
 on:
   schedule:
-    - cron: '03 16 * * *' # Runs every day at 9:33 PM IST
+    - cron: '30 1 * * *'  # Runs every day at 7:00 AM IST
+    - cron: '30 11 * * *' # Runs every day at 5:00 PM IST
   workflow_dispatch:
 
 jobs:
@@ -12,7 +13,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Cache FFmpeg
+        id: cache-ffmpeg
+        uses: actions/cache@v4
+        with:
+          path: /usr/bin/ffmpeg
+          key: ffmpeg-ubuntu-24
+
       - name: Install FFmpeg
+        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Download Video from Google Drive
